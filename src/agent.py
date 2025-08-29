@@ -1,4 +1,5 @@
 import logging
+import os
 
 from dotenv import load_dotenv
 from livekit.agents import (
@@ -66,22 +67,28 @@ async def entrypoint(ctx: JobContext):
         # A Large Language Model (LLM) is your agent's brain, processing user input and generating a response
         # See all providers at https://docs.livekit.io/agents/integrations/llm/
 llm=openai.LLM(
-            model="gpt-oss:20b",
-            api_key="horses99x",
-            base_url="http://192.168.88.16:11434/v1",
-        ),        # Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
+            model=os.getenv("LLM_MODEL", "gpt-oss:20b"),
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENAI_BASE_URL", "http://192.168.88.16:11434/v1"),
+        ),
+        # Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
         # See all providers at https://docs.livekit.io/agents/integrations/stt/
-        stt=deepgram.STT(model="nova-3", language="multi"),
+        stt=deepgram.STT(
+            model=os.getenv("DEEPGRAM_MODEL", "nova-3"),
+            language=os.getenv("DEEPGRAM_LANGUAGE", "multi"),
+        ),
         # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
         # See all providers at https://docs.livekit.io/agents/integrations/tts/
-        tts=cartesia.TTS(voice="6f84f4b8-58a2-430c-8c79-688dad597532"),
+        tts=cartesia.TTS(
+            voice=os.getenv("CARTESIA_VOICE", "6f84f4b8-58a2-430c-8c79-688dad597532")
+        ),
         # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
         # See more at https://docs.livekit.io/agents/build/turns
         turn_detection=MultilingualModel(),
         vad=ctx.proc.userdata["vad"],
         # allow the LLM to generate a response while waiting for the end of turn
         # See more at https://docs.livekit.io/agents/build/audio/#preemptive-generation
-        preemptive_generation=True,
+        preemptive_generation=os.getenv("PREEMPTIVE_GENERATION", "true").lower() == "true",
     )
 
     # To use a realtime model instead of a voice pipeline, use the following session setup instead:
